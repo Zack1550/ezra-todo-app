@@ -1,11 +1,228 @@
-﻿#root {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 2rem;
+﻿:root {
+    --bg: #0f1420; /* deep blue/black header */
+    --text: #0e1b2a; /* body text */
+    --muted: #6b7785; /* helper text */
+    --surface: #ffffff; /* cards */
+    --line: #e8edf3; /* borders */
+    --accent: #f2b400; /* gold/yellow buttons */
+    --accent-hover: #d89f00;
+    --focus: #265dff; /* focus ring */
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+    color: var(--text);
+    background: #f6f8fb;
+    /* center the page content */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* change to 'center' for true middle */
+    min-height: 100vh;
+}
+
+/* Top step bar */
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg);
+    color: #c9d6e2;
+    padding: 14px 24px;
+    width: 100%;
+}
+
+    .header .steps {
+        display: flex;
+        gap: 18px;
+        align-items: center;
+        font-size: 14px;
+        flex-wrap: wrap;
+    }
+
+.step {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    opacity: .7;
+}
+
+    .step.active {
+        color: #fff;
+        opacity: 1;
+    }
+
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .6;
+}
+
+/* Page container */
+.container {
+    max-width: 960px; /* increased from 720px for wider body */
+    width: 100%;
+    margin: 40px auto 64px;
+    padding: 0 20px;
+}
+
+/* Card wrapper */
+.card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(15, 20, 32, 0.06);
+    padding: 24px;
+}
+
+/* Section titles */
+.h1 {
+    font-size: 24px;
+    margin: 0 0 6px;
+}
+
+.sub {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 20px;
+}
+
+/* Form grid like the screenshot spacing */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 14px;
+}
+
+.field {
+    grid-column: span 6;
+}
+
+    .field.full {
+        grid-column: span 12;
+    }
+
+.label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 6px 0;
+}
+
+.input, .select {
+    width: 100%;
+    border: 1px solid var(--line);
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px 12px;
+    font-size: 14px;
+    outline: none;
+}
+
+    .input:focus, .select:focus {
+        border-color: var(--focus);
+        box-shadow: 0 0 0 3px rgba(38,93,255,.15);
+    }
+
+/* Action bar */
+.actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.btn {
+    appearance: none;
+    border: none;
+    border-radius: 999px;
+    padding: 12px 20px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap; /* prevent button text from wrapping */
+}
+
+    .btn.secondary {
+        background: #fff;
+        border: 1px solid var(--line);
+        color: var(--text);
+    }
+
+    .btn.primary {
+        background: var(--accent);
+        color: #1a1a1a;
+    }
+
+        .btn.primary:hover {
+            background: var(--accent-hover);
+        }
+
+    .btn:focus {
+        outline: 3px solid rgba(38,93,255,.35);
+        outline-offset: 2px;
+    }
+
+/* Todo sections */
+.section {
+    margin-top: 28px;
+}
+
+    .section h2 {
+        font-size: 18px;
+        margin: 0 0 12px;
+    }
+
+/* Optional: cap section height and allow scrolling for long lists */
+.section {
+    max-height: 340px; /* adjust or remove to disable scrolling */
+    overflow-y: auto;
+    padding-right: 2px; /* room for scrollbar without jump */
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+    table-layout: fixed; /* keeps the widths consistent */
+}
+
+.table th, .table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+    white-space: nowrap; /* prevent text wrapping in headers */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Adjusted column widths */
+.table th:nth-child(1),
+.table td:nth-child(1) {
+    width: 12%; /* Increased for Done checkbox to prevent text splitting */
     text-align: center;
 }
 
-th, td {
-    padding-left: 1rem;
-    padding-right: 1rem;
+.table th:nth-child(2),
+.table td:nth-child(2) {
+    width: 50%; /* Adjusted Title width */
+}
+
+.table th:nth-child(3),
+.table td:nth-child(3) {
+    width: 20%; /* Adjusted Created width */
+}
+
+.table th:nth-child(4),
+.table td:nth-child(4) {
+    width: 18%; /* Increased for Delete button to prevent wrapping */
+    text-align: right;
 }
