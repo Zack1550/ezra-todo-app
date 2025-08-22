@@ -1,0 +1,18 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+*.vs
+*.db
+
+# SQLite DB (persist locally, don’t commit)
+AppData/*.db
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Misc
+*.log
