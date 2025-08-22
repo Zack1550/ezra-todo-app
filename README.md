@@ -48,9 +48,9 @@ DELETE /api/todos/{id}
 - Add `docker-compose` for local parity
 - Add GitHub Actions (build FE/BE, push image, optional PR checks)
 - **Features**:
-    - Filters (active/completed), edit title, search
-    - Pagination & sort
-    - Optimistic UI (update before round-trip)
+    - Search
+    - Sort
+    - Determine limits for number of ToDos
 - **Tests**: Controller/service
 
 ## Potential Solutions for Scale
