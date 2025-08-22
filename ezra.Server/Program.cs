@@ -7,11 +7,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// EF Core (SQLite)
-builder.Services.AddDbContext<TodoDbContext>(opt =>
-    opt.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+// --- Use SQLite in ezra.Server/AppData/todo.db ---
+var dataDir = Path.Combine(builder.Environment.ContentRootPath, "AppData");
+Directory.CreateDirectory(dataDir); // ensure folder exists
+var dbPath = Path.Combine(dataDir, "todo.db");
+var connectionString = $"Data Source={dbPath}";
 
-// CORS for Vite dev server (adjust port if yours differs)
+builder.Services.AddDbContext<TodoDbContext>(opt =>
+    opt.UseSqlite(connectionString));
+
+
 builder.Services.AddCors(opt =>
 {
     opt.AddPolicy("dev", policy => policy
