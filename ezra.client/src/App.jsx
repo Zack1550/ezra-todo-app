@@ -44,6 +44,9 @@ export default function App() {
         await load();
     }
 
+    const incomplete = todos.filter(t => !t.isCompleted);
+    const completed = todos.filter(t => t.isCompleted);
+
     return (
         <div>
             <h1>Todos</h1>
@@ -52,42 +55,65 @@ export default function App() {
                 <input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Add a task�"
+                    placeholder="Add a task…"
                     aria-label="Todo title"
                 />
                 <button type="submit">Add</button>
             </form>
 
             {loading ? (
-                <p><em>Loading�</em></p>
-            ) : todos.length === 0 ? (
-                <p>Nothing here yet. Add your first task!</p>
+                <p><em>Loading…</em></p>
             ) : (
-                <table className="table table-striped" aria-label="Todo list">
-                    <thead>
-                        <tr>
-                            <th>Done</th>
-                            <th>Title</th>
-                            <th>Created (UTC)</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {todos.map(t => (
-                            <tr key={t.id}>
-                                <td>
-                                    <input type="checkbox" checked={t.isCompleted} onChange={() => toggle(t)} />
-                                </td>
-                                <td style={{ textDecoration: t.isCompleted ? 'line-through' : 'none' }}>{t.title}</td>
-                                <td>{new Date(t.createdUtc).toLocaleString()}</td>
-                                <td>
-                                    <button onClick={() => remove(t.id)}>Delete</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                <>
+                    <TodoSection
+                        title="Incomplete"
+                        todos={incomplete}
+                        toggle={toggle}
+                        remove={remove}
+                    />
+
+                    <TodoSection
+                        title="Completed"
+                        todos={completed}
+                        toggle={toggle}
+                        remove={remove}
+                    />
+                </>
             )}
         </div>
+    );
+}
+
+function TodoSection({ title, todos, toggle, remove }) {
+    if (todos.length === 0) return null;
+
+    return (
+        <>
+            <h2>{title}</h2>
+            <table className="table table-striped" aria-label={`${title} todos`}>
+                <thead>
+                    <tr>
+                        <th>Done</th>
+                        <th>Title</th>
+                        <th>Created (UTC)</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {todos.map(t => (
+                        <tr key={t.id}>
+                            <td>
+                                <input type="checkbox" checked={t.isCompleted} onChange={() => toggle(t)} />
+                            </td>
+                            <td style={{ textDecoration: t.isCompleted ? 'line-through' : 'none' }}>{t.title}</td>
+                            <td>{new Date(t.createdUtc).toLocaleString()}</td>
+                            <td>
+                                <button onClick={() => remove(t.id)}>Delete</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </>
     );
 }

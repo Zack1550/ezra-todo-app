@@ -7,7 +7,11 @@ obj/
 *.db
 
 # SQLite DB (persist locally, don’t commit)
-AppData/*.db
+# SQLite database files
+ezra.Server/AppData/*.db
+ezra.Server/AppData/*.db-shm
+ezra.Server/AppData/*.db-wal
+
 
 # Node
 node_modules/
