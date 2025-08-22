@@ -1,80 +1,152 @@
-﻿using System.Collections.Generic;
+﻿// TodosControllerTests.cs
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using ezra.Server.Controllers;
-using ezra.Server.Data;
 using ezra.Server.Models;
-using FluentAssertions;
+using ezra.Server.Service;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
-
-namespace ezra.Server.Tests;
 
 public class TodosControllerTests
 {
-    private static TodoDbContext CreateDb()
+    private static TodosController CreateController(out Mock<ITodoService> mock)
     {
-        var options = new DbContextOptionsBuilder<TodoDbContext>()
-            .UseInMemoryDatabase($"todos-{System.Guid.NewGuid()}")
-            .Options;
-        return new TodoDbContext(options);
+        mock = new Mock<ITodoService>(MockBehavior.Strict);
+        return new TodosController(mock.Object);
     }
 
     [Fact]
-    public async Task Create_Then_List_Should_Return_Item()
+    public async Task GetAll_ReturnsOk_WithItems()
     {
-        using var db = CreateDb();
-        var controller = new TodosController(db);
+        // Arrange
+        var controller = CreateController(out var mock);
+        var items = new List<TodoItem>
+        {
+            new() { Id = 1, Title = "A" },
+            new() { Id = 2, Title = "B", IsCompleted = true }
+        };
 
-        // CREATE
-        var created = await controller.Create(new TodosController.CreateTodo("Write tests"));
-        created.Result.Should().BeOfType<CreatedAtActionResult>();
-        var createdAt = (CreatedAtActionResult)created.Result!;
-        createdAt.Value.Should().BeOfType<TodoItem>();
-        var createdItem = (TodoItem)createdAt.Value!;
-        createdItem.Title.Should().Be("Write tests");
-        createdItem.IsCompleted.Should().BeFalse();
+        mock.Setup(s => s.GetAllAsync()).ReturnsAsync(items);
 
-        // LIST
-        var listResult = await controller.GetAll();
-        var list = listResult.Value ?? (listResult.Result as IEnumerable<TodoItem>);
-        list.Should().ContainSingle(t => t.Title == "Write tests" && t.IsCompleted == false);
+        // Act
+        var result = await controller.GetAll();
+
+        // Assert
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var payload = Assert.IsAssignableFrom<IEnumerable<TodoItem>>(ok.Value);
+        Assert.Equal(2, payload.Count());
+        mock.VerifyAll();
     }
 
     [Fact]
-    public async Task Update_Toggle_Completion_Should_Persist()
+    public async Task Get_ReturnsItem_WhenFound()
     {
-        using var db = CreateDb();
-        var controller = new TodosController(db);
+        var controller = CreateController(out var mock);
+        var item = new TodoItem { Id = 42, Title = "Hello" };
 
-        var created = await controller.Create(new TodosController.CreateTodo("Toggle me"));
-        var createdAt = (CreatedAtActionResult)created.Result!;
-        var item = (TodoItem)createdAt.Value!;
-        var id = item.Id;
+        mock.Setup(s => s.GetByIdAsync(42)).ReturnsAsync(item);
 
-        var updateResult = await controller.Update(id, new TodosController.UpdateTodo(null, true));
-        updateResult.Should().BeOfType<NoContentResult>();
+        var result = await controller.Get(42);
 
-        var get = await controller.Get(id);
-        get.Value.Should().NotBeNull();
-        get.Value!.IsCompleted.Should().BeTrue();
+        var returned = Assert.IsType<TodoItem>(result.Value);
+        Assert.Equal(42, returned.Id);
+        Assert.Equal("Hello", returned.Title);
+        mock.VerifyAll();
     }
 
     [Fact]
-    public async Task Delete_Should_Remove_Item()
+    public async Task Get_ReturnsNotFound_WhenMissing()
     {
-        using var db = CreateDb();
-        var controller = new TodosController(db);
+        var controller = CreateController(out var mock);
+        mock.Setup(s => s.GetByIdAsync(7)).ReturnsAsync((TodoItem?)null);
 
-        var created = await controller.Create(new TodosController.CreateTodo("Delete me"));
-        var createdAt = (CreatedAtActionResult)created.Result!;
-        var item = (TodoItem)createdAt.Value!;
-        var id = item.Id;
+        var result = await controller.Get(7);
 
-        var delete = await controller.Delete(id);
-        delete.Should().BeOfType<NoContentResult>();
+        Assert.IsType<NotFoundResult>(result.Result);
+        mock.VerifyAll();
+    }
 
-        var after = await controller.Get(id);
-        after.Result.Should().BeOfType<NotFoundResult>();
+    [Fact]
+    public async Task Create_ReturnsBadRequest_WhenTitleMissing()
+    {
+        var controller = CreateController(out var mock);
+
+        var res1 = await controller.Create(new TodosController.CreateTodoRequest(""));
+        Assert.IsType<BadRequestObjectResult>(res1.Result);
+
+        var res2 = await controller.Create(new TodosController.CreateTodoRequest("   "));
+        Assert.IsType<BadRequestObjectResult>(res2.Result);
+
+        mock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task Create_ReturnsCreatedAtAction_WithNewItem()
+    {
+        var controller = CreateController(out var mock);
+        var created = new TodoItem { Id = 5, Title = "New one" };
+
+        mock.Setup(s => s.CreateAsync("New one")).ReturnsAsync(created);
+
+        var result = await controller.Create(new TodosController.CreateTodoRequest("New one"));
+
+        var crt = Assert.IsType<CreatedAtActionResult>(result.Result);
+        Assert.Equal(nameof(TodosController.Get), crt.ActionName);
+        Assert.Equal(5, crt.RouteValues?["id"]);
+        var payload = Assert.IsType<TodoItem>(crt.Value);
+        Assert.Equal("New one", payload.Title);
+
+        mock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task Update_ReturnsNoContent_WhenServiceUpdates()
+    {
+        var controller = CreateController(out var mock);
+        mock.Setup(s => s.UpdateAsync(10, "Updated", true)).ReturnsAsync(true);
+
+        var result = await controller.Update(
+            10, new TodosController.UpdateTodoRequest("Updated", true));
+
+        Assert.IsType<NoContentResult>(result);
+        mock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task Update_ReturnsNotFound_WhenServiceSaysMissing()
+    {
+        var controller = CreateController(out var mock);
+        mock.Setup(s => s.UpdateAsync(99, null, null)).ReturnsAsync(false);
+
+        var result = await controller.Update(99, new TodosController.UpdateTodoRequest(null, null));
+
+        Assert.IsType<NotFoundResult>(result);
+        mock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task Delete_ReturnsNoContent_WhenDeleted()
+    {
+        var controller = CreateController(out var mock);
+        mock.Setup(s => s.DeleteAsync(3)).ReturnsAsync(true);
+
+        var result = await controller.Delete(3);
+
+        Assert.IsType<NoContentResult>(result);
+        mock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task Delete_ReturnsNotFound_WhenMissing()
+    {
+        var controller = CreateController(out var mock);
+        mock.Setup(s => s.DeleteAsync(404)).ReturnsAsync(false);
+
+        var result = await controller.Delete(404);
+
+        Assert.IsType<NotFoundResult>(result);
+        mock.VerifyAll();
     }
 }
